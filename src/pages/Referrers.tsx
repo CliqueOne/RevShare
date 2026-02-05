@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCompany } from '../hooks/useCompany';
-import { Plus, Mail, Phone, Percent, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Plus, Mail, Phone, Percent, Edit2, Trash2, Check, X, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface Referrer {
   id: string;
@@ -12,6 +13,7 @@ interface Referrer {
   phone: string | null;
   commission_rate: number;
   status: 'active' | 'inactive' | 'pending';
+  referral_code: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -22,6 +24,9 @@ export function Referrers() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [currentReferralCode, setCurrentReferralCode] = useState<string>('');
+  const [currentReferrerName, setCurrentReferrerName] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -57,21 +62,25 @@ export function Referrers() {
     }
   }
 
+  function generateReferralCode(): string {
+    return 'REF' + Math.random().toString(36).substring(2, 10).toUpperCase();
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!currentCompany || !canManage) return;
 
     try {
-      const referrerData = {
-        company_id: currentCompany.id,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || null,
-        commission_rate: parseFloat(formData.commission_rate),
-        status: formData.status,
-      };
-
       if (editingId) {
+        const referrerData = {
+          company_id: currentCompany.id,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          commission_rate: parseFloat(formData.commission_rate),
+          status: formData.status,
+        };
+
         const { error } = await supabase
           .from('referrers')
           .update(referrerData)
@@ -79,11 +88,26 @@ export function Referrers() {
 
         if (error) throw error;
       } else {
+        const referralCode = generateReferralCode();
+        const referrerData = {
+          company_id: currentCompany.id,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          commission_rate: parseFloat(formData.commission_rate),
+          status: formData.status,
+          referral_code: referralCode,
+        };
+
         const { error } = await supabase
           .from('referrers')
           .insert(referrerData);
 
         if (error) throw error;
+
+        setCurrentReferralCode(referralCode);
+        setCurrentReferrerName(formData.name);
+        setShowQRModal(true);
       }
 
       setShowForm(false);
@@ -308,6 +332,19 @@ export function Referrers() {
                     {canManage && (
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
+                          {referrer.referral_code && (
+                            <button
+                              onClick={() => {
+                                setCurrentReferralCode(referrer.referral_code || '');
+                                setCurrentReferrerName(referrer.name);
+                                setShowQRModal(true);
+                              }}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="View QR Code"
+                            >
+                              <QrCode className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleEdit(referrer)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -330,6 +367,57 @@ export function Referrers() {
           </table>
         </div>
       </div>
+
+      {showQRModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
+            <div className="text-center space-y-6">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                  <QrCode className="w-8 h-8 text-green-600" />
+                </div>
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Referrer Created!</h2>
+                <p className="text-slate-600">
+                  Share this QR code with <span className="font-semibold">{currentReferrerName}</span>
+                </p>
+              </div>
+
+              <div className="bg-slate-50 rounded-xl p-6">
+                <div className="flex justify-center mb-4">
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <QRCodeSVG
+                      value={`${window.location.origin}/signup?ref=${currentReferralCode}`}
+                      size={200}
+                      level="H"
+                      includeMargin={true}
+                    />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-slate-500 mb-1">Referral Code</p>
+                  <p className="text-sm font-mono font-semibold text-slate-900 bg-white px-3 py-2 rounded-lg inline-block">
+                    {currentReferralCode}
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-sm text-slate-600">
+                When scanned, this QR code will take users to the signup page with the referral code automatically applied.
+              </p>
+
+              <button
+                onClick={() => setShowQRModal(false)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
