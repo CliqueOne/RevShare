@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useCompany } from './hooks/useCompany';
+import { useReferrer } from './hooks/useReferrer';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
@@ -8,12 +10,20 @@ import { Leads } from './pages/Leads';
 import { Deals } from './pages/Deals';
 import { Commissions } from './pages/Commissions';
 import { Payouts } from './pages/Payouts';
+import { ReferrerDashboard } from './pages/ReferrerDashboard';
+import { ReferrerLeads } from './pages/ReferrerLeads';
+import { ReferrerCommissions } from './pages/ReferrerCommissions';
 import { DashboardLayout } from './components/DashboardLayout';
+import { ReferrerLayout } from './components/ReferrerLayout';
 
 function AppContent() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { currentCompany, loading: companyLoading } = useCompany();
+  const { referrer, loading: referrerLoading } = useReferrer();
   const [showSignup, setShowSignup] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
+
+  const loading = authLoading || companyLoading || referrerLoading;
 
   if (loading) {
     return (
@@ -28,6 +38,29 @@ function AppContent() {
       <Signup onToggle={() => setShowSignup(false)} />
     ) : (
       <Login onToggle={() => setShowSignup(true)} />
+    );
+  }
+
+  const isReferrerOnly = referrer && !currentCompany;
+
+  if (isReferrerOnly) {
+    const renderReferrerPage = () => {
+      switch (currentPage) {
+        case 'dashboard':
+          return <ReferrerDashboard onNavigate={setCurrentPage} />;
+        case 'leads':
+          return <ReferrerLeads />;
+        case 'commissions':
+          return <ReferrerCommissions />;
+        default:
+          return <ReferrerDashboard onNavigate={setCurrentPage} />;
+      }
+    };
+
+    return (
+      <ReferrerLayout currentPage={currentPage} onNavigate={setCurrentPage}>
+        {renderReferrerPage()}
+      </ReferrerLayout>
     );
   }
 
