@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import { UserPlus } from 'lucide-react';
 
 export function Signup({ onToggle }: { onToggle: () => void }) {
@@ -10,6 +11,41 @@ export function Signup({ onToggle }: { onToggle: () => void }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referrerInfo, setReferrerInfo] = useState<{ name: string; companyName: string; referrerId: string } | null>(null);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+
+    if (refCode) {
+      setReferralCode(refCode);
+      loadReferrerInfo(refCode);
+    }
+  }, []);
+
+  async function loadReferrerInfo(code: string) {
+    try {
+      const { data: referrer, error: referrerError } = await supabase
+        .from('referrers')
+        .select('id, name, company_id, companies(name)')
+        .eq('referral_code', code)
+        .maybeSingle();
+
+      if (referrerError || !referrer) {
+        setError('Invalid referral code');
+        return;
+      }
+
+      setReferrerInfo({
+        name: referrer.name,
+        companyName: (referrer.companies as any)?.name || 'Unknown Company',
+        referrerId: referrer.id,
+      });
+    } catch (err) {
+      console.error('Error loading referrer info:', err);
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,14 +64,26 @@ export function Signup({ onToggle }: { onToggle: () => void }) {
 
     setLoading(true);
 
-    const { error } = await signUp(email, password);
+    const { error, data } = await signUp(email, password);
 
     if (error) {
       setError(error.message);
-    } else {
-      setSuccess(true);
+      setLoading(false);
+      return;
     }
 
+    if (referrerInfo && data?.user) {
+      const { error: updateError } = await supabase
+        .from('referrers')
+        .update({ user_id: data.user.id })
+        .eq('id', referrerInfo.referrerId);
+
+      if (updateError) {
+        console.error('Error linking referrer:', updateError);
+      }
+    }
+
+    setSuccess(true);
     setLoading(false);
   };
 
@@ -80,8 +128,17 @@ export function Signup({ onToggle }: { onToggle: () => void }) {
           Create Account
         </h1>
         <p className="text-center text-slate-600 mb-8">
-          Start managing your referrals today
+          {referrerInfo ? `Join ${referrerInfo.companyName} as a referrer` : 'Start managing your referrals today'}
         </p>
+
+        {referrerInfo && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-green-800">
+              <span className="font-semibold">{referrerInfo.name}</span> invited you to join{' '}
+              <span className="font-semibold">{referrerInfo.companyName}</span> as a referrer
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
