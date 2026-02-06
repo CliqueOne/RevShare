@@ -20,8 +20,12 @@ function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const { currentCompany, loading: companyLoading } = useCompany();
   const { referrer, loading: referrerLoading } = useReferrer();
-  const [showSignup, setShowSignup] = useState(false);
   const [currentPage, setCurrentPage] = useState('dashboard');
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasRefCode = urlParams.has('ref');
+  const isSignupPath = window.location.pathname.includes('signup');
+  const [showSignup, setShowSignup] = useState(hasRefCode || isSignupPath);
 
   const loading = authLoading || companyLoading || referrerLoading;
 
