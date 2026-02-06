@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCompany } from '../hooks/useCompany';
-import { Users, UserPlus, Briefcase, DollarSign, TrendingUp, Plus, X, Building2 } from 'lucide-react';
+import { Users, UserPlus, Briefcase, DollarSign, TrendingUp, X, Building2 } from 'lucide-react';
+import { AddReferrerModal } from '../components/AddReferrerModal';
+import { ReferrerQRModal } from '../components/ReferrerQRModal';
 
 interface Stats {
   totalReferrers: number;
@@ -31,6 +33,10 @@ export function Dashboard({ onNavigate }: { onNavigate: (page: string) => void }
   const [companyName, setCompanyName] = useState('');
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [showAddReferrerModal, setShowAddReferrerModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [currentReferralCode, setCurrentReferralCode] = useState('');
+  const [currentReferrerName, setCurrentReferrerName] = useState('');
 
   useEffect(() => {
     if (currentCompany) {
@@ -110,6 +116,19 @@ export function Dashboard({ onNavigate }: { onNavigate: (page: string) => void }
     } finally {
       setCreating(false);
     }
+  }
+
+  function handleAddReferrerSuccess(referralCode: string, referrerName: string) {
+    setShowAddReferrerModal(false);
+    setCurrentReferralCode(referralCode);
+    setCurrentReferrerName(referrerName);
+    setShowQRModal(true);
+    loadStats();
+  }
+
+  function handleQRModalClose() {
+    setShowQRModal(false);
+    onNavigate('referrers');
   }
 
   if (!currentCompany) {
@@ -291,19 +310,29 @@ export function Dashboard({ onNavigate }: { onNavigate: (page: string) => void }
         </p>
         <div className="flex flex-wrap gap-4">
           <button
-            onClick={() => onNavigate('referrers')}
+            onClick={() => setShowAddReferrerModal(true)}
             className="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-medium transition-colors"
           >
             Add Referrer
           </button>
-          <button
-            onClick={() => onNavigate('leads')}
-            className="bg-blue-500 hover:bg-blue-400 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            Add Lead
-          </button>
         </div>
       </div>
+
+      {showAddReferrerModal && currentCompany && (
+        <AddReferrerModal
+          companyId={currentCompany.id}
+          onClose={() => setShowAddReferrerModal(false)}
+          onSuccess={handleAddReferrerSuccess}
+        />
+      )}
+
+      {showQRModal && (
+        <ReferrerQRModal
+          referralCode={currentReferralCode}
+          referrerName={currentReferrerName}
+          onClose={handleQRModalClose}
+        />
+      )}
     </div>
   );
 }

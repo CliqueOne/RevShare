@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCompany } from '../hooks/useCompany';
 import { Plus, Mail, Phone, Percent, Edit2, Trash2, Check, X, QrCode } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { AddReferrerModal } from '../components/AddReferrerModal';
+import { ReferrerQRModal } from '../components/ReferrerQRModal';
 
 interface Referrer {
   id: string;
@@ -22,12 +23,11 @@ export function Referrers() {
   const { currentCompany, hasPermission } = useCompany();
   const [referrers, setReferrers] = useState<Referrer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [currentReferralCode, setCurrentReferralCode] = useState<string>('');
   const [currentReferrerName, setCurrentReferrerName] = useState<string>('');
-  const [previewReferralCode, setPreviewReferralCode] = useState<string>('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -63,55 +63,35 @@ export function Referrers() {
     }
   }
 
-  function generateReferralCode(): string {
-    return 'REF' + Math.random().toString(36).substring(2, 10).toUpperCase();
+  function handleAddSuccess(referralCode: string, referrerName: string) {
+    setShowAddModal(false);
+    setCurrentReferralCode(referralCode);
+    setCurrentReferrerName(referrerName);
+    setShowQRModal(true);
+    loadReferrers();
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!currentCompany || !canManage) return;
+    if (!currentCompany || !canManage || !editingId) return;
 
     try {
-      if (editingId) {
-        const referrerData = {
-          company_id: currentCompany.id,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone || null,
-          commission_rate: parseFloat(formData.commission_rate),
-          status: formData.status,
-        };
+      const referrerData = {
+        company_id: currentCompany.id,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        commission_rate: parseFloat(formData.commission_rate),
+        status: formData.status,
+      };
 
-        const { error } = await supabase
-          .from('referrers')
-          .update(referrerData)
-          .eq('id', editingId);
+      const { error } = await supabase
+        .from('referrers')
+        .update(referrerData)
+        .eq('id', editingId);
 
-        if (error) throw error;
-      } else {
-        const referralCode = previewReferralCode || generateReferralCode();
-        const referrerData = {
-          company_id: currentCompany.id,
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone || null,
-          commission_rate: parseFloat(formData.commission_rate),
-          status: formData.status,
-          referral_code: referralCode,
-        };
+      if (error) throw error;
 
-        const { error } = await supabase
-          .from('referrers')
-          .insert(referrerData);
-
-        if (error) throw error;
-
-        setCurrentReferralCode(referralCode);
-        setCurrentReferrerName(formData.name);
-        setShowQRModal(true);
-      }
-
-      setShowForm(false);
       setEditingId(null);
       setFormData({
         name: '',
@@ -122,7 +102,7 @@ export function Referrers() {
       });
       loadReferrers();
     } catch (error) {
-      console.error('Error saving referrer:', error);
+      console.error('Error updating referrer:', error);
     }
   }
 
@@ -144,7 +124,6 @@ export function Referrers() {
 
   function handleEdit(referrer: Referrer) {
     setEditingId(referrer.id);
-    setPreviewReferralCode('');
     setFormData({
       name: referrer.name,
       email: referrer.email,
@@ -152,13 +131,10 @@ export function Referrers() {
       commission_rate: referrer.commission_rate.toString(),
       status: referrer.status,
     });
-    setShowForm(true);
   }
 
   function handleCancel() {
-    setShowForm(false);
     setEditingId(null);
-    setPreviewReferralCode('');
     setFormData({
       name: '',
       email: '',
@@ -181,10 +157,7 @@ export function Referrers() {
         </div>
         {canManage && (
           <button
-            onClick={() => {
-              setPreviewReferralCode(generateReferralCode());
-              setShowForm(true);
-            }}
+            onClick={() => setShowAddModal(true)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -193,124 +166,15 @@ export function Referrers() {
         )}
       </div>
 
-      {showForm && !editingId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-slate-900 mb-2">Add New Referrer</h2>
-              <p className="text-slate-600">Fill in the details and share the QR code</p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Name</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Phone</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Commission Rate (%)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={formData.commission_rate}
-                    onChange={(e) => setFormData({ ...formData, commission_rate: e.target.value })}
-                    required
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="pending">Pending</option>
-                  </select>
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <button
-                    type="button"
-                    onClick={handleCancel}
-                    className="flex-1 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                  >
-                    Create Referrer
-                  </button>
-                </div>
-              </form>
-
-              <div className="flex flex-col items-center justify-center">
-                <div className="bg-slate-50 rounded-xl p-6 w-full">
-                  <div className="text-center mb-4">
-                    <div className="flex justify-center mb-3">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <QrCode className="w-6 h-6 text-blue-600" />
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-bold text-slate-900 mb-1">Referral QR Code</h3>
-                    <p className="text-sm text-slate-600">Scan to access signup page</p>
-                  </div>
-
-                  <div className="bg-white rounded-lg p-6 shadow-sm mb-4 flex justify-center">
-                    <QRCodeSVG
-                      value={`${window.location.origin}/signup?ref=${previewReferralCode}`}
-                      size={180}
-                      level="H"
-                      includeMargin={true}
-                    />
-                  </div>
-
-                  <div className="text-center">
-                    <p className="text-xs text-slate-500 mb-2">Referral Code</p>
-                    <div className="bg-white px-4 py-2 rounded-lg border border-slate-200">
-                      <p className="text-sm font-mono font-semibold text-slate-900">
-                        {previewReferralCode}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      {showAddModal && currentCompany && (
+        <AddReferrerModal
+          companyId={currentCompany.id}
+          onClose={() => setShowAddModal(false)}
+          onSuccess={handleAddSuccess}
+        />
       )}
 
-      {showForm && editingId && (
+      {editingId && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <h2 className="text-xl font-bold text-slate-900 mb-4">Edit Referrer</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -490,54 +354,11 @@ export function Referrers() {
       </div>
 
       {showQRModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8">
-            <div className="text-center space-y-6">
-              <div className="flex justify-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <QrCode className="w-8 h-8 text-green-600" />
-                </div>
-              </div>
-
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Referrer QR Code</h2>
-                <p className="text-slate-600">
-                  Share this QR code with <span className="font-semibold">{currentReferrerName}</span>
-                </p>
-              </div>
-
-              <div className="bg-slate-50 rounded-xl p-6">
-                <div className="flex justify-center mb-4">
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <QRCodeSVG
-                      value={`${window.location.origin}/signup?ref=${currentReferralCode}`}
-                      size={200}
-                      level="H"
-                      includeMargin={true}
-                    />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-slate-500 mb-1">Referral Code</p>
-                  <p className="text-sm font-mono font-semibold text-slate-900 bg-white px-3 py-2 rounded-lg inline-block">
-                    {currentReferralCode}
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-sm text-slate-600">
-                When scanned, this QR code will take users to the signup page and automatically assign them as this referrer.
-              </p>
-
-              <button
-                onClick={() => setShowQRModal(false)}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <ReferrerQRModal
+          referralCode={currentReferralCode}
+          referrerName={currentReferrerName}
+          onClose={() => setShowQRModal(false)}
+        />
       )}
     </div>
   );
