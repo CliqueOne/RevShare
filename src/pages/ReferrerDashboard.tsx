@@ -14,7 +14,7 @@ interface Stats {
 }
 
 export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const { referrer } = useReferrer();
+  const { referrer, error: referrerError, loading: referrerLoading } = useReferrer();
   const [stats, setStats] = useState<Stats>({
     totalLeads: 0,
     newLeads: 0,
@@ -79,7 +79,7 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
     }
   }
 
-  if (loading) {
+  if (loading || referrerLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-slate-600">Loading...</div>
@@ -93,7 +93,7 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">No Referrer Account Found</h2>
           <p className="text-slate-600">
-            Your account is not set up as a referrer. Please contact your company administrator.
+            {referrerError || 'Your account is not set up as a referrer. Please contact your company administrator.'}
           </p>
         </div>
       </div>

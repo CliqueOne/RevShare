@@ -24,11 +24,13 @@ export function useReferrer() {
   const { user } = useAuth();
   const [referrer, setReferrer] = useState<Referrer | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
       setReferrer(null);
       setLoading(false);
+      setError(null);
       return;
     }
 
@@ -37,16 +39,49 @@ export function useReferrer() {
 
   async function loadReferrer() {
     try {
-      const { data, error } = await supabase
+      setError(null);
+
+      const { data: existingReferrer, error: queryError } = await supabase
         .from('referrers')
         .select('*, company:companies(id, name)')
         .eq('user_id', user?.id)
         .maybeSingle();
 
-      if (error) throw error;
-      setReferrer(data);
+      if (queryError) throw queryError;
+
+      if (existingReferrer) {
+        setReferrer(existingReferrer);
+        setLoading(false);
+        return;
+      }
+
+      const { data: unclaimedReferrer, error: unclaimedError } = await supabase
+        .from('referrers')
+        .select('*, company:companies(id, name)')
+        .eq('email', user?.email)
+        .is('user_id', null)
+        .maybeSingle();
+
+      if (unclaimedError) throw unclaimedError;
+
+      if (unclaimedReferrer) {
+        const { data: linkedReferrer, error: updateError } = await supabase
+          .from('referrers')
+          .update({ user_id: user.id })
+          .eq('id', unclaimedReferrer.id)
+          .select('*, company:companies(id, name)')
+          .single();
+
+        if (updateError) throw updateError;
+
+        setReferrer(linkedReferrer);
+      } else {
+        setError('No referrer account found for this email. Please contact your company administrator.');
+        setReferrer(null);
+      }
     } catch (error) {
       console.error('Error loading referrer:', error);
+      setError('Failed to load referrer account. Please try again.');
       setReferrer(null);
     } finally {
       setLoading(false);
@@ -56,6 +91,7 @@ export function useReferrer() {
   return {
     referrer,
     loading,
+    error,
     refresh: loadReferrer,
   };
 }
