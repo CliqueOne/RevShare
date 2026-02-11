@@ -59,10 +59,10 @@ export function ReferrerQRModal({ referralCode, referrerName, onClose }: Referre
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 relative animate-fadeIn">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 w-10 h-10 sm:w-8 sm:h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:text-slate-800 transition-colors shadow-sm"
           aria-label="Close"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5 sm:w-5 sm:h-5" />
         </button>
 
         <div className="text-center space-y-6">
