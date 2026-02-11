@@ -12,7 +12,7 @@ export function ReferrerQRModal({ referralCode, referrerName, onClose }: Referre
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const referralUrl = `${window.location.origin}/signup?ref=${referralCode}`;
+  const referralUrl = `${window.location.origin}/lead?ref=${referralCode}`;
 
   const handleCopyCode = async () => {
     try {
@@ -73,9 +73,9 @@ export function ReferrerQRModal({ referralCode, referrerName, onClose }: Referre
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Share Your Referral</h2>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Generate Leads</h2>
             <p className="text-slate-600">
-              Show this QR code to friends or share your referral link
+              Share this QR code or link to generate tracked leads
             </p>
           </div>
 
@@ -132,7 +132,7 @@ export function ReferrerQRModal({ referralCode, referrerName, onClose }: Referre
           </div>
 
           <p className="text-sm text-slate-600">
-            Anyone who signs up using your code or link will be tracked as your referral, earning you commissions on deals they close!
+            Anyone who scans your QR code or uses your link will be tracked as a lead you generated, earning you commissions when they convert to a deal!
           </p>
 
           <button

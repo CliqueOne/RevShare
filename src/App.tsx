@@ -4,6 +4,7 @@ import { useCompany } from './hooks/useCompany';
 import { useReferrer } from './hooks/useReferrer';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
+import { LeadCapture } from './pages/LeadCapture';
 import { Dashboard } from './pages/Dashboard';
 import { Referrers } from './pages/Referrers';
 import { Leads } from './pages/Leads';
@@ -24,8 +25,13 @@ function AppContent() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const hasRefCode = urlParams.has('ref');
+  const isLeadCapturePath = window.location.pathname.includes('lead');
   const isSignupPath = window.location.pathname.includes('signup');
   const [showSignup, setShowSignup] = useState(hasRefCode || isSignupPath);
+
+  if (isLeadCapturePath && hasRefCode) {
+    return <LeadCapture />;
+  }
 
   const loading = authLoading || companyLoading || referrerLoading;
 
