@@ -56,35 +56,35 @@ export function ReferrerQRModal({ referralCode, referrerName, onClose }: Referre
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
       onClick={handleBackdropClick}
     >
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 relative animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] flex flex-col relative animate-fadeIn">
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 w-10 h-10 sm:w-8 sm:h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:text-slate-800 transition-colors shadow-sm"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 w-10 h-10 sm:w-8 sm:h-8 bg-slate-100 hover:bg-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:text-slate-800 transition-colors shadow-sm z-10"
           aria-label="Close"
         >
           <X className="w-5 h-5 sm:w-5 sm:h-5" />
         </button>
 
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-4 sm:space-y-6 p-6 sm:p-8 overflow-y-auto">
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-              <QrCode className="w-8 h-8 text-blue-600" />
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center">
+              <QrCode className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
             </div>
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Generate Leads</h2>
-            <p className="text-slate-600">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Generate Leads</h2>
+            <p className="text-sm sm:text-base text-slate-600">
               Share this QR code or link to generate tracked leads
             </p>
           </div>
 
-          <div className="bg-slate-50 rounded-xl p-6">
+          <div className="bg-slate-50 rounded-xl p-4 sm:p-6">
             <div className="flex justify-center mb-4">
-              <div className="bg-white p-4 rounded-lg shadow-sm">
+              <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm">
                 <QRCodeSVG
                   value={referralUrl}
-                  size={200}
+                  size={160}
                   level="H"
                   includeMargin={true}
                 />
@@ -130,10 +130,6 @@ export function ReferrerQRModal({ referralCode, referrerName, onClose }: Referre
               </button>
             </div>
           </div>
-
-          <p className="text-sm text-slate-600">
-            Anyone who scans your QR code or uses your link will be tracked as a lead you generated, earning you commissions when they convert to a deal!
-          </p>
 
           <button
             onClick={onClose}
