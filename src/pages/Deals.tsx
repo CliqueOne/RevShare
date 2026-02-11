@@ -226,7 +226,7 @@ export function Deals() {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Deals</h1>
           <p className="text-slate-600">Track and close deals from referrals</p>
         </div>
-        {canManage && (
+        {canManage && referrers.length > 0 && (
           <button
             onClick={() => setShowForm(true)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -323,7 +323,11 @@ export function Deals() {
               {deals.length === 0 ? (
                 <tr>
                   <td colSpan={canManage ? 5 : 4} className="px-6 py-12 text-center text-slate-600">
-                    No deals yet. {canManage && 'Click "Add Deal" to get started.'}
+                    {referrers.length === 0 ? (
+                      canManage ? 'No deals yet. Add referrers first to start tracking deals.' : 'No deals yet.'
+                    ) : (
+                      canManage ? 'No deals yet. Click "Add Deal" to get started.' : 'No deals yet.'
+                    )}
                   </td>
                 </tr>
               ) : (
