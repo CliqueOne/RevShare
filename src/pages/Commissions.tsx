@@ -77,12 +77,35 @@ export function Commissions() {
     if (!canManage) return;
 
     try {
-      const { error } = await supabase
+      const commission = commissions.find(c => c.id === commissionId);
+      if (!commission) return;
+
+      const { error: commissionError } = await supabase
         .from('commission_ledger')
         .update({ status: newStatus })
         .eq('id', commissionId);
 
-      if (error) throw error;
+      if (commissionError) throw commissionError;
+
+      if (newStatus === 'paid') {
+        const { data: deal, error: dealError } = await supabase
+          .from('deals')
+          .select('lead_id, status')
+          .eq('id', commission.deal_id)
+          .maybeSingle();
+
+        if (dealError) throw dealError;
+
+        if (deal && deal.status === 'won') {
+          const { error: leadError } = await supabase
+            .from('leads')
+            .update({ status: 'converted' })
+            .eq('id', deal.lead_id);
+
+          if (leadError) throw leadError;
+        }
+      }
+
       loadData();
     } catch (error) {
       console.error('Error updating commission status:', error);
