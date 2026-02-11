@@ -114,7 +114,7 @@ export function ReferrerQRModal({ referralCode, referrerName, onClose }: Referre
           <div className="bg-blue-50 rounded-lg p-4">
             <p className="text-xs text-slate-600 mb-2 text-left">Referral Link</p>
             <div className="flex items-center gap-2">
-              <div className="flex-1 bg-white rounded-lg px-3 py-2 text-xs font-mono text-slate-700 overflow-x-auto select-all">
+              <div className="flex-1 bg-white rounded-lg px-3 py-2 text-xs font-mono text-slate-700 overflow-x-auto">
                 {referralUrl}
               </div>
               <button
