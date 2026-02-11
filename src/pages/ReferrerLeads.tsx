@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useReferrer } from '../hooks/useReferrer';
 import { Mail, Phone, Check, Clock, X } from 'lucide-react';
+import { mapStatusForReferrer, getReferrerStatusLabel, type AdminLeadStatus } from '../lib/statusMapping';
 
 interface Lead {
   id: string;
@@ -48,19 +49,21 @@ export function ReferrerLeads() {
   }
 
   const getStatusBadge = (status: Lead['status']) => {
+    const mappedStatus = mapStatusForReferrer(status as AdminLeadStatus);
+    const label = getReferrerStatusLabel(status as AdminLeadStatus);
+
     const config = {
       new: { color: 'bg-blue-100 text-blue-700', icon: Clock },
-      contacted: { color: 'bg-amber-100 text-amber-700', icon: Phone },
-      qualified: { color: 'bg-purple-100 text-purple-700', icon: Check },
-      converted: { color: 'bg-green-100 text-green-700', icon: Check },
+      pending: { color: 'bg-amber-100 text-amber-700', icon: Clock },
+      closed: { color: 'bg-green-100 text-green-700', icon: Check },
       lost: { color: 'bg-slate-100 text-slate-700', icon: X },
     };
 
-    const { color, icon: Icon } = config[status];
+    const { color, icon: Icon } = config[mappedStatus];
     return (
       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${color}`}>
         <Icon className="w-3 h-3" />
-        {status}
+        {label}
       </span>
     );
   };

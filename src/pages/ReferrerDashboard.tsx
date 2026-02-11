@@ -38,13 +38,9 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
     if (!referrer) return;
 
     try {
-      const [leadsRes, dealsRes, commissionsRes] = await Promise.all([
+      const [leadsRes, commissionsRes] = await Promise.all([
         supabase
           .from('leads')
-          .select('status', { count: 'exact' })
-          .eq('referrer_id', referrer.id),
-        supabase
-          .from('deals')
           .select('status', { count: 'exact' })
           .eq('referrer_id', referrer.id),
         supabase
@@ -54,8 +50,10 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
       ]);
 
       const leads = leadsRes.data || [];
-      const deals = dealsRes.data || [];
       const commissions = commissionsRes.data || [];
+
+      const activeLeads = leads.filter(l => l.status !== 'lost' && l.status !== 'converted');
+      const closedDeals = leads.filter(l => l.status === 'converted').length;
 
       const totalCommissions = commissions.reduce((sum, c) => sum + Number(c.amount), 0);
       const pendingCommissions = commissions
@@ -66,10 +64,10 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
         .reduce((sum, c) => sum + Number(c.amount), 0);
 
       setStats({
-        totalLeads: leads.length,
+        totalLeads: activeLeads.length,
         newLeads: leads.filter(l => l.status === 'new').length,
-        totalDeals: deals.length,
-        wonDeals: deals.filter(d => d.status === 'won').length,
+        totalDeals: leads.length,
+        wonDeals: closedDeals,
         totalCommissions,
         pendingCommissions,
         paidCommissions,
@@ -121,7 +119,7 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
     {
       name: 'Deals Closed',
       value: stats.wonDeals,
-      subtitle: `of ${stats.totalDeals} total`,
+      subtitle: `of ${stats.totalDeals} total leads`,
       icon: Briefcase,
       color: 'amber',
     },
