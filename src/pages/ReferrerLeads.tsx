@@ -11,7 +11,7 @@ interface Lead {
   name: string;
   email: string;
   phone: string | null;
-  company: string | null;
+  company_name: string | null;
   status: 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
   notes: string | null;
   created_at: string;
@@ -132,7 +132,7 @@ export function ReferrerLeads() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-slate-900">{lead.company || 'N/A'}</div>
+                      <div className="text-sm text-slate-900">{lead.company_name || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4">{getStatusBadge(lead.status)}</td>
                     <td className="px-6 py-4">
