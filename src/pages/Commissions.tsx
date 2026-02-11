@@ -78,11 +78,19 @@ export function Commissions() {
 
     try {
       const commission = commissions.find(c => c.id === commissionId);
-      if (!commission) return;
+      if (!commission) {
+        console.error('Commission not found');
+        return;
+      }
+
+      const updateData: any = { status: newStatus };
+      if (newStatus === 'paid') {
+        updateData.paid_at = new Date().toISOString();
+      }
 
       const { error: commissionError } = await supabase
         .from('commission_ledger')
-        .update({ status: newStatus })
+        .update(updateData)
         .eq('id', commissionId);
 
       if (commissionError) throw commissionError;
@@ -103,6 +111,10 @@ export function Commissions() {
             .eq('id', deal.lead_id);
 
           if (leadError) throw leadError;
+        } else if (!deal) {
+          console.error('Deal not found for commission:', commissionId);
+        } else if (deal.status !== 'won') {
+          console.log('Deal status is not "won", lead will not be converted');
         }
       }
 
