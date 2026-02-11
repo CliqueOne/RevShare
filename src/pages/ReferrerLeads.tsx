@@ -86,7 +86,7 @@ export function ReferrerLeads() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12">
       <div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">My Leads</h1>
         <p className="text-slate-600">Track all the leads you've referred</p>
