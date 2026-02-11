@@ -206,6 +206,11 @@ export function Leads() {
   async function handleStatusChange(lead: Lead, newStatus: Lead['status']) {
     if (!currentCompany || !canManage) return;
 
+    if (lead.status === 'qualified' || lead.status === 'converted') {
+      alert('Cannot change status of qualified or converted leads.');
+      return;
+    }
+
     if (newStatus === 'qualified') {
       try {
         const { data: existingDeals, error } = await supabase
@@ -400,7 +405,12 @@ export function Leads() {
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={originalStatus === 'qualified' || originalStatus === 'converted'}
+                  className={`w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    originalStatus === 'qualified' || originalStatus === 'converted'
+                      ? 'bg-slate-100 cursor-not-allowed opacity-60'
+                      : ''
+                  }`}
                 >
                   <option value="new">New</option>
                   <option value="contacted">Contacted</option>
@@ -408,6 +418,11 @@ export function Leads() {
                   <option value="converted">Converted</option>
                   <option value="lost">Lost</option>
                 </select>
+                {(originalStatus === 'qualified' || originalStatus === 'converted') && (
+                  <p className="mt-1 text-xs text-slate-500">
+                    Status cannot be changed once a lead is qualified or converted.
+                  </p>
+                )}
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 mb-2">Notes</label>
@@ -492,7 +507,7 @@ export function Leads() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {canManage ? (
+                      {canManage && lead.status !== 'qualified' && lead.status !== 'converted' ? (
                         <select
                           value={lead.status}
                           onChange={(e) => handleStatusChange(lead, e.target.value as Lead['status'])}
