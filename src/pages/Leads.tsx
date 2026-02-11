@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCompany } from '../hooks/useCompany';
 import { Plus, Mail, Phone, Building2, Edit2, Trash2, User } from 'lucide-react';
+import { CreateDealModal } from '../components/CreateDealModal';
 
 interface Lead {
   id: string;
@@ -38,6 +39,8 @@ export function Leads() {
     status: 'new' as Lead['status'],
     notes: '',
   });
+  const [showDealModal, setShowDealModal] = useState(false);
+  const [qualifyingLead, setQualifyingLead] = useState<Lead | null>(null);
 
   const canManage = hasPermission('admin');
 
@@ -170,6 +173,78 @@ export function Leads() {
 
   function getReferrerName(referrerId: string) {
     return referrers.find(r => r.id === referrerId)?.name || 'Unknown';
+  }
+
+  async function handleStatusChange(lead: Lead, newStatus: Lead['status']) {
+    if (!currentCompany || !canManage) return;
+
+    if (newStatus === 'qualified') {
+      try {
+        const { data: existingDeals, error } = await supabase
+          .from('deals')
+          .select('id')
+          .eq('lead_id', lead.id);
+
+        if (error) throw error;
+
+        if (existingDeals && existingDeals.length > 0) {
+          alert('A deal already exists for this lead. Cannot create duplicate deals.');
+          return;
+        }
+
+        setQualifyingLead(lead);
+        setShowDealModal(true);
+      } catch (error) {
+        console.error('Error checking for existing deals:', error);
+        alert('Failed to check for existing deals. Please try again.');
+      }
+    } else {
+      try {
+        const { error } = await supabase
+          .from('leads')
+          .update({ status: newStatus })
+          .eq('id', lead.id);
+
+        if (error) throw error;
+        loadData();
+      } catch (error) {
+        console.error('Error updating lead status:', error);
+        alert('Failed to update lead status. Please try again.');
+      }
+    }
+  }
+
+  async function handleCreateDeal(amount: number) {
+    if (!qualifyingLead || !currentCompany) return;
+
+    const { error: dealError } = await supabase
+      .from('deals')
+      .insert({
+        company_id: currentCompany.id,
+        lead_id: qualifyingLead.id,
+        referrer_id: qualifyingLead.referrer_id,
+        amount,
+        status: 'pending',
+        closed_at: null,
+      });
+
+    if (dealError) throw dealError;
+
+    const { error: leadError } = await supabase
+      .from('leads')
+      .update({ status: 'qualified' })
+      .eq('id', qualifyingLead.id);
+
+    if (leadError) throw leadError;
+
+    setShowDealModal(false);
+    setQualifyingLead(null);
+    loadData();
+  }
+
+  function handleCloseDealModal() {
+    setShowDealModal(false);
+    setQualifyingLead(null);
   }
 
   const statusColors = {
@@ -360,9 +435,23 @@ export function Leads() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${statusColors[lead.status]}`}>
-                        {lead.status}
-                      </span>
+                      {canManage ? (
+                        <select
+                          value={lead.status}
+                          onChange={(e) => handleStatusChange(lead, e.target.value as Lead['status'])}
+                          className={`px-2 py-1 rounded-full text-xs font-medium border-0 cursor-pointer focus:ring-2 focus:ring-blue-500 ${statusColors[lead.status]}`}
+                        >
+                          <option value="new">New</option>
+                          <option value="contacted">Contacted</option>
+                          <option value="qualified">Qualified</option>
+                          <option value="converted">Converted</option>
+                          <option value="lost">Lost</option>
+                        </select>
+                      ) : (
+                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${statusColors[lead.status]}`}>
+                          {lead.status}
+                        </span>
+                      )}
                     </td>
                     {canManage && (
                       <td className="px-6 py-4">
@@ -389,6 +478,17 @@ export function Leads() {
           </table>
         </div>
       </div>
+
+      {showDealModal && qualifyingLead && (
+        <CreateDealModal
+          leadId={qualifyingLead.id}
+          leadName={qualifyingLead.name}
+          referrerId={qualifyingLead.referrer_id}
+          companyId={currentCompany!.id}
+          onClose={handleCloseDealModal}
+          onSubmit={handleCreateDeal}
+        />
+      )}
     </div>
   );
 }
