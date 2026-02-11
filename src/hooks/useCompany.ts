@@ -26,6 +26,7 @@ export function useCompany() {
   const [currentCompany, setCurrentCompany] = useState<Company | null>(null);
   const [currentRole, setCurrentRole] = useState<'owner' | 'admin' | 'member' | null>(null);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -98,20 +99,54 @@ export function useCompany() {
   const createCompany = async (name: string) => {
     if (!user) return { error: new Error('Not authenticated') };
 
-    const { data, error } = await supabase
-      .from('companies')
-      .insert({ name, owner_id: user.id })
-      .select()
-      .single();
+    setCreating(true);
+    try {
+      const { data, error } = await supabase
+        .from('companies')
+        .insert({ name, owner_id: user.id })
+        .select()
+        .single();
 
-    if (!error && data) {
-      await loadCompanies();
+      if (error) {
+        return { data, error };
+      }
+
+      if (data) {
+        // Wait for the database trigger to create the membership
+        // Retry up to 5 times with 200ms delays
+        let membershipFound = false;
+        for (let i = 0; i < 5; i++) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+
+          const { data: membershipData } = await supabase
+            .from('memberships')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('company_id', data.id)
+            .maybeSingle();
+
+          if (membershipData) {
+            membershipFound = true;
+            break;
+          }
+        }
+
+        // Now load all companies with synchronized state
+        await loadCompanies();
+      }
+
+      return { data, error };
+    } finally {
+      setCreating(false);
     }
-
-    return { data, error };
   };
 
   const hasPermission = (requiredRole: 'owner' | 'admin' | 'member'): boolean => {
+    // Fallback: if user is the company owner, grant all permissions
+    if (!currentRole && currentCompany && user && currentCompany.owner_id === user.id) {
+      return true;
+    }
+
     if (!currentRole) return false;
 
     const roleHierarchy = { owner: 3, admin: 2, member: 1 };
@@ -124,6 +159,7 @@ export function useCompany() {
     currentCompany,
     currentRole,
     loading,
+    creating,
     switchCompany,
     createCompany,
     hasPermission,
