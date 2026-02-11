@@ -134,7 +134,7 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8 pb-16 md:pb-8">
       <div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome, {referrer.name}</h1>
         <p className="text-slate-600">
