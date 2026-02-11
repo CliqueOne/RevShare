@@ -295,8 +295,7 @@ export function Referrers() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 text-slate-900">
-                        <Percent className="w-4 h-4" />
+                      <div className="text-slate-900">
                         {referrer.commission_rate}%
                       </div>
                     </td>
