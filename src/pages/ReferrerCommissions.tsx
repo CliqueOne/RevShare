@@ -14,8 +14,11 @@ interface Commission {
   paid_at: string | null;
   deal?: {
     id: string;
-    title: string;
     amount: number;
+    lead?: {
+      name: string;
+      email: string;
+    };
   };
 }
 
@@ -49,7 +52,7 @@ export function ReferrerCommissions() {
     try {
       const { data, error } = await supabase
         .from('commission_ledger')
-        .select('*, deal:deals(id, title, amount)')
+        .select('*, deal:deals(id, amount, lead:leads(name, email))')
         .eq('referrer_id', referrer.id)
         .order('created_at', { ascending: false });
 
@@ -177,7 +180,7 @@ export function ReferrerCommissions() {
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">Deal</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">Lead</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">Deal Amount</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">Commission</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-slate-900">Status</th>
@@ -196,7 +199,7 @@ export function ReferrerCommissions() {
                   <tr key={commission.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4">
                       <div className="font-medium text-slate-900">
-                        {commission.deal?.title || 'Untitled Deal'}
+                        {commission.deal?.lead?.name || 'Unknown Lead'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
