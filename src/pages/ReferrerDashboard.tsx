@@ -122,6 +122,7 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
       subtitle: `of ${stats.totalDeals} total leads`,
       icon: Briefcase,
       color: 'amber',
+      onClick: () => onNavigate('commissions'),
     },
     {
       name: 'Total Earned',
