@@ -1,22 +1,31 @@
 import { ReactNode } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useReferrer } from '../hooks/useReferrer';
-import { LayoutDashboard, Users, DollarSign, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, DollarSign, LogOut, UserPlus, LucideIcon } from 'lucide-react';
 
 interface ReferrerLayoutProps {
   children: ReactNode;
   currentPage: string;
   onNavigate: (page: string) => void;
+  onReferClick?: () => void;
 }
 
-export function ReferrerLayout({ children, currentPage, onNavigate }: ReferrerLayoutProps) {
+interface NavigationItem {
+  name: string;
+  icon: LucideIcon;
+  page: string;
+  isAction?: boolean;
+}
+
+export function ReferrerLayout({ children, currentPage, onNavigate, onReferClick }: ReferrerLayoutProps) {
   const { signOut } = useAuth();
   const { referrer } = useReferrer();
 
-  const navigation = [
+  const navigation: NavigationItem[] = [
     { name: 'Dashboard', icon: LayoutDashboard, page: 'dashboard' },
     { name: 'My Leads', icon: Users, page: 'leads' },
     { name: 'Commissions', icon: DollarSign, page: 'commissions' },
+    { name: 'Refer', icon: UserPlus, page: 'refer', isAction: true },
   ];
 
   return (
@@ -33,10 +42,17 @@ export function ReferrerLayout({ children, currentPage, onNavigate }: ReferrerLa
                 {navigation.map(item => {
                   const Icon = item.icon;
                   const isActive = currentPage === item.page;
+                  const handleClick = () => {
+                    if (item.isAction && item.page === 'refer' && onReferClick) {
+                      onReferClick();
+                    } else {
+                      onNavigate(item.page);
+                    }
+                  };
                   return (
                     <button
                       key={item.name}
-                      onClick={() => onNavigate(item.page)}
+                      onClick={handleClick}
                       className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
                         isActive
                           ? 'bg-blue-50 text-blue-600'
@@ -76,10 +92,17 @@ export function ReferrerLayout({ children, currentPage, onNavigate }: ReferrerLa
           {navigation.map(item => {
             const Icon = item.icon;
             const isActive = currentPage === item.page;
+            const handleClick = () => {
+              if (item.isAction && item.page === 'refer' && onReferClick) {
+                onReferClick();
+              } else {
+                onNavigate(item.page);
+              }
+            };
             return (
               <button
                 key={item.name}
-                onClick={() => onNavigate(item.page)}
+                onClick={handleClick}
                 className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors ${
                   isActive ? 'text-blue-600' : 'text-slate-600'
                 }`}

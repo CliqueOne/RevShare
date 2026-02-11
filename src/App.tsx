@@ -16,12 +16,14 @@ import { ReferrerLeads } from './pages/ReferrerLeads';
 import { ReferrerCommissions } from './pages/ReferrerCommissions';
 import { DashboardLayout } from './components/DashboardLayout';
 import { ReferrerLayout } from './components/ReferrerLayout';
+import { ReferrerQRModal } from './components/ReferrerQRModal';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const { currentCompany, loading: companyLoading } = useCompany();
   const { referrer, loading: referrerLoading } = useReferrer();
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   const urlParams = new URLSearchParams(window.location.search);
   const hasRefCode = urlParams.has('ref');
@@ -68,9 +70,22 @@ function AppContent() {
     };
 
     return (
-      <ReferrerLayout currentPage={currentPage} onNavigate={setCurrentPage}>
-        {renderReferrerPage()}
-      </ReferrerLayout>
+      <>
+        <ReferrerLayout
+          currentPage={currentPage}
+          onNavigate={setCurrentPage}
+          onReferClick={() => setShowReferralModal(true)}
+        >
+          {renderReferrerPage()}
+        </ReferrerLayout>
+        {showReferralModal && referrer && (
+          <ReferrerQRModal
+            referralCode={referrer.referral_code}
+            referrerName={referrer.name}
+            onClose={() => setShowReferralModal(false)}
+          />
+        )}
+      </>
     );
   }
 
