@@ -32,7 +32,7 @@ export function DashboardLayout({ children, currentPage, onNavigate }: Dashboard
     { name: 'Leads', icon: UserPlus, page: 'leads', permission: 'member' as const },
     { name: 'Deals', icon: Briefcase, page: 'deals', permission: 'member' as const },
     { name: 'Commissions', icon: DollarSign, page: 'commissions', permission: 'member' as const },
-    { name: 'Payouts', icon: CreditCard, page: 'payouts', permission: 'admin' as const },
+    // { name: 'Payouts', icon: CreditCard, page: 'payouts', permission: 'admin' as const },
   ];
 
   const handleSignOut = async () => {
