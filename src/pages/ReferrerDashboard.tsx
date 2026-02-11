@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useReferrer } from '../hooks/useReferrer';
-import { Users, Briefcase, DollarSign, TrendingUp, Percent } from 'lucide-react';
+import { Users, Briefcase, DollarSign, TrendingUp, Percent, UserPlus } from 'lucide-react';
+import { ReferrerQRModal } from '../components/ReferrerQRModal';
 
 interface Stats {
   totalLeads: number;
@@ -25,6 +26,7 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
     paidCommissions: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   useEffect(() => {
     if (referrer) {
@@ -192,15 +194,30 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
       )}
 
       <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg p-8 text-white">
-        <h2 className="text-2xl font-bold mb-2">Keep Growing Your Earnings</h2>
-        <p className="text-blue-100 mb-6 max-w-2xl">
-          Share your referral link to bring in more leads. Every deal that closes means more commission for you!
-        </p>
-        <div className="bg-blue-500 rounded-lg p-4">
-          <p className="text-xs text-blue-100 mb-2">Your Referral Code</p>
-          <p className="text-lg font-mono font-bold">{referrer.referral_code}</p>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold mb-2">Keep Growing Your Earnings</h2>
+            <p className="text-blue-100 max-w-2xl">
+              Share your referral code with friends and colleagues. Every deal that closes means more commission for you!
+            </p>
+          </div>
+          <button
+            onClick={() => setShowReferralModal(true)}
+            className="flex items-center gap-2 bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
+          >
+            <UserPlus className="w-5 h-5" />
+            Refer a Friend
+          </button>
         </div>
       </div>
+
+      {showReferralModal && (
+        <ReferrerQRModal
+          referralCode={referrer.referral_code}
+          referrerName={referrer.name}
+          onClose={() => setShowReferralModal(false)}
+        />
+      )}
     </div>
   );
 }
