@@ -30,6 +30,7 @@ export function Leads() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [originalStatus, setOriginalStatus] = useState<Lead['status'] | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -41,6 +42,7 @@ export function Leads() {
   });
   const [showDealModal, setShowDealModal] = useState(false);
   const [qualifyingLead, setQualifyingLead] = useState<Lead | null>(null);
+  const [pendingFormData, setPendingFormData] = useState<typeof formData | null>(null);
 
   const canManage = hasPermission('admin');
 
@@ -83,6 +85,34 @@ export function Leads() {
     e.preventDefault();
     if (!currentCompany || !canManage) return;
 
+    if (editingId && originalStatus !== 'qualified' && formData.status === 'qualified') {
+      try {
+        const { data: existingDeals, error } = await supabase
+          .from('deals')
+          .select('id')
+          .eq('lead_id', editingId);
+
+        if (error) throw error;
+
+        if (existingDeals && existingDeals.length > 0) {
+          alert('A deal already exists for this lead. Cannot create duplicate deals.');
+          return;
+        }
+
+        const currentLead = leads.find(l => l.id === editingId);
+        if (currentLead) {
+          setPendingFormData(formData);
+          setQualifyingLead(currentLead);
+          setShowDealModal(true);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking for existing deals:', error);
+        alert('Failed to check for existing deals. Please try again.');
+        return;
+      }
+    }
+
     try {
       const leadData = {
         company_id: currentCompany.id,
@@ -112,6 +142,7 @@ export function Leads() {
 
       setShowForm(false);
       setEditingId(null);
+      setOriginalStatus(null);
       setFormData({
         name: '',
         email: '',
@@ -145,6 +176,7 @@ export function Leads() {
 
   function handleEdit(lead: Lead) {
     setEditingId(lead.id);
+    setOriginalStatus(lead.status);
     setFormData({
       name: lead.name,
       email: lead.email,
@@ -160,6 +192,8 @@ export function Leads() {
   function handleCancel() {
     setShowForm(false);
     setEditingId(null);
+    setOriginalStatus(null);
+    setPendingFormData(null);
     setFormData({
       name: '',
       email: '',
@@ -230,12 +264,46 @@ export function Leads() {
 
     if (dealError) throw dealError;
 
-    const { error: leadError } = await supabase
-      .from('leads')
-      .update({ status: 'qualified' })
-      .eq('id', qualifyingLead.id);
+    if (pendingFormData) {
+      const leadData = {
+        company_id: currentCompany.id,
+        referrer_id: pendingFormData.referrer_id,
+        name: pendingFormData.name,
+        email: pendingFormData.email,
+        phone: pendingFormData.phone || null,
+        company_name: pendingFormData.company_name || null,
+        status: 'qualified' as Lead['status'],
+        notes: pendingFormData.notes || null,
+      };
 
-    if (leadError) throw leadError;
+      const { error: leadError } = await supabase
+        .from('leads')
+        .update(leadData)
+        .eq('id', qualifyingLead.id);
+
+      if (leadError) throw leadError;
+
+      setShowForm(false);
+      setEditingId(null);
+      setOriginalStatus(null);
+      setPendingFormData(null);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        company_name: '',
+        referrer_id: '',
+        status: 'new',
+        notes: '',
+      });
+    } else {
+      const { error: leadError } = await supabase
+        .from('leads')
+        .update({ status: 'qualified' })
+        .eq('id', qualifyingLead.id);
+
+      if (leadError) throw leadError;
+    }
 
     setShowDealModal(false);
     setQualifyingLead(null);
@@ -243,6 +311,10 @@ export function Leads() {
   }
 
   function handleCloseDealModal() {
+    if (pendingFormData && originalStatus) {
+      setFormData({ ...pendingFormData, status: originalStatus });
+      setPendingFormData(null);
+    }
     setShowDealModal(false);
     setQualifyingLead(null);
   }
