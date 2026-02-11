@@ -109,7 +109,7 @@ export function ReferrerDashboard({ onNavigate }: { onNavigate: (page: string) =
       color: 'blue',
     },
     {
-      name: 'Total Leads',
+      name: 'Leads',
       value: stats.totalLeads,
       subtitle: `${stats.newLeads} new`,
       icon: Users,
