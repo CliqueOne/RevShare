@@ -11,6 +11,7 @@ export function Signup({ onToggle }: { onToggle: () => void }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [linkingReferrer, setLinkingReferrer] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referrerInfo, setReferrerInfo] = useState<{ name: string; companyName: string; referrerId: string } | null>(null);
 
@@ -74,31 +75,64 @@ export function Signup({ onToggle }: { onToggle: () => void }) {
 
     // If signing up with a referral code, link the referrer account
     if (referrerInfo && data?.user) {
-      // Wait a moment for auth session to fully establish
-      await new Promise(resolve => setTimeout(resolve, 500));
+      setLoading(false);
+      setLinkingReferrer(true);
 
-      const { error: updateError } = await supabase
-        .from('referrers')
-        .update({ user_id: data.user.id })
-        .eq('id', referrerInfo.referrerId);
+      try {
+        // Wait for session to be fully established
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-      if (updateError) {
-        console.error('Error linking referrer:', updateError);
-        setError('Account created but failed to link referrer profile. Please contact support.');
-        setLoading(false);
+        // Verify we have an active session
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          throw new Error('Session not established');
+        }
+
+        // Link the referrer account and update email to match
+        const { error: updateError } = await supabase
+          .from('referrers')
+          .update({
+            user_id: session.user.id,
+            email: session.user.email
+          })
+          .eq('id', referrerInfo.referrerId);
+
+        if (updateError) {
+          console.error('Error linking referrer:', updateError);
+          throw updateError;
+        }
+
+        // Successfully linked - stay in linking state while app redirects
+        return;
+      } catch (err) {
+        console.error('Linking error:', err);
+        // If linking fails, still let them continue - useReferrer hook will retry
+        setLinkingReferrer(false);
+        setSuccess(true);
         return;
       }
-    }
-
-    // Don't show success screen for referrers - let them auto-login
-    if (referrerInfo) {
-      // Auth state will update automatically and redirect to dashboard
-      return;
     }
 
     setSuccess(true);
     setLoading(false);
   };
+
+  if (linkingReferrer) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
+          <div className="flex items-center justify-center mb-6">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">Setting Up Your Account</h2>
+          <p className="text-slate-600">
+            Linking your referrer profile...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (success) {
     return (
