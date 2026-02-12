@@ -72,7 +72,11 @@ export function Signup({ onToggle }: { onToggle: () => void }) {
       return;
     }
 
+    // If signing up with a referral code, link the referrer account
     if (referrerInfo && data?.user) {
+      // Wait a moment for auth session to fully establish
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const { error: updateError } = await supabase
         .from('referrers')
         .update({ user_id: data.user.id })
@@ -80,7 +84,16 @@ export function Signup({ onToggle }: { onToggle: () => void }) {
 
       if (updateError) {
         console.error('Error linking referrer:', updateError);
+        setError('Account created but failed to link referrer profile. Please contact support.');
+        setLoading(false);
+        return;
       }
+    }
+
+    // Don't show success screen for referrers - let them auto-login
+    if (referrerInfo) {
+      // Auth state will update automatically and redirect to dashboard
+      return;
     }
 
     setSuccess(true);

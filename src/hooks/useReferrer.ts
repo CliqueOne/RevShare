@@ -72,12 +72,16 @@ export function useReferrer() {
           .select('*, company:companies(id, name)')
           .single();
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error linking unclaimed referrer:', updateError);
+          throw updateError;
+        }
 
         setReferrer(linkedReferrer);
       } else {
-        setError('No referrer account found for this email. Please contact your company administrator.');
+        // No referrer found - this is OK for company users
         setReferrer(null);
+        setError(null);
       }
     } catch (error) {
       console.error('Error loading referrer:', error);
