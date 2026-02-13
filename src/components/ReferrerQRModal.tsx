@@ -12,7 +12,7 @@ export function ReferrerQRModal({ referralCode, referrerName, onClose }: Referre
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  const referralUrl = `${window.location.origin}/signup?ref=${referralCode}`;
+  const referralUrl = `${window.location.origin}/lead-capture?ref=${referralCode}`;
 
   const handleCopyCode = async () => {
     try {
@@ -73,9 +73,9 @@ export function ReferrerQRModal({ referralCode, referrerName, onClose }: Referre
           </div>
 
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Invite New Referrers</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1 sm:mb-2">Capture New Leads</h2>
             <p className="text-sm sm:text-base text-slate-600">
-              Share this QR code or link to invite new referrers to join your team
+              Share this QR code or link with potential customers to capture leads
             </p>
           </div>
 
