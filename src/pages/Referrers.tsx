@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useCompany } from '../hooks/useCompany';
 import { Plus, Mail, Phone, Percent, Edit2, Trash2, Check, X, QrCode } from 'lucide-react';
 import { AddReferrerModal } from '../components/AddReferrerModal';
-import { ReferrerQRModal } from '../components/ReferrerQRModal';
+import { AdminReferrerQRModal } from '../components/AdminReferrerQRModal';
 
 interface Referrer {
   id: string;
@@ -353,7 +353,7 @@ export function Referrers() {
       </div>
 
       {showQRModal && (
-        <ReferrerQRModal
+        <AdminReferrerQRModal
           referralCode={currentReferralCode}
           referrerName={currentReferrerName}
           onClose={() => setShowQRModal(false)}

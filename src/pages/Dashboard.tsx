@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useCompany } from '../hooks/useCompany';
 import { Users, UserPlus, Briefcase, DollarSign, TrendingUp, X, Building2 } from 'lucide-react';
 import { AddReferrerModal } from '../components/AddReferrerModal';
-import { ReferrerQRModal } from '../components/ReferrerQRModal';
+import { AdminReferrerQRModal } from '../components/AdminReferrerQRModal';
 
 interface Stats {
   totalReferrers: number;
@@ -327,7 +327,7 @@ export function Dashboard({ onNavigate }: { onNavigate: (page: string) => void }
       )}
 
       {showQRModal && (
-        <ReferrerQRModal
+        <AdminReferrerQRModal
           referralCode={currentReferralCode}
           referrerName={currentReferrerName}
           onClose={handleQRModalClose}
